@@ -2,7 +2,7 @@ const main = async () => {
     const [owner, randomPerson] = await hre.ethers.getSigners();
     const domainContractFactory = await hre.ethers.getContractFactory('Domains')
     const domainContract = await domainContractFactory.deploy('naruto');
-    const domainName = '9tails';
+    const domainName = 'NINETAILS';
     await domainContract.deployed();
     console.log('Contract deployed at: ', domainContract.address);
 
