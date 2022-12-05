@@ -22,7 +22,7 @@ contract Domains is ERC721URIStorage {
     mapping(string => address) public domains;
     mapping(string => string) public records;
 
-    constructor(string memory _tld) payable ERC721('Naruto Name Service', 'NNS') {
+    constructor(string memory _tld) payable ERC721('Ghost Name Service', 'NNS') {
         tld = _tld;
         console.log('Creating Domains Contract');
     }

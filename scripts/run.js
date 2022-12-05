@@ -16,12 +16,12 @@ const main = async () => {
     console.log('Contract balance: ', hre.ethers.utils.formatEther(balance));
 
     // Trying to set a record that doesn't belong to me!
-    // try {
-    //     txn = await domainContract.connect(randomPerson).setRecord('DOOM', "Haha my domain now!");
-    //     await txn.wait();
-    // } catch (err) {
-    //     console.log('You dont own this domain.');
-    // }
+    try {
+        txn = await domainContract.connect(randomPerson).setRecord('DOOM', "Haha my domain now!");
+        await txn.wait();
+    } catch (err) {
+        console.log('You dont own this domain.');
+    }
 }
 
 const runMain = async () => {
