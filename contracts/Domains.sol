@@ -8,11 +8,14 @@ import "@openzeppelin/contracts/utils/Base64.sol";
 import { StringUtils } from "./libraries/StringUtils.sol";
 import "hardhat/console.sol";
 
+
+
 contract Domains is ERC721URIStorage {
     // OpenZeppling keeping track of tokenId
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
-
+    
+    address payable public owner;
     string public tld;
 
     // We'll be storing our NFT images on chain as these default SVGs for now
@@ -21,8 +24,14 @@ contract Domains is ERC721URIStorage {
 
     mapping(string => address) public domains;
     mapping(string => string) public records;
+    mapping(uint => string) public names;
+
+    error Unauthorized();
+    error AlreadyRegistered();
+    error InvalidName(string name);
 
     constructor(string memory _tld) payable ERC721('Ghost Name Service', 'NNS') {
+        owner = payable(msg.sender);
         tld = _tld;
         console.log('Creating Domains Contract');
     }
@@ -42,8 +51,8 @@ contract Domains is ERC721URIStorage {
 
     function register(string calldata name) public payable {
         // Check that the name is unregistered
-        require(domains[name] == address(0));
-
+        require(domains[name] == address(0), 'Name already exists.');
+        console.log('msgSender: ', msg.sender);
         uint _price = price(name);
         require(msg.value >= _price, "Not enough Matic paid");
 
@@ -71,13 +80,14 @@ contract Domains is ERC721URIStorage {
 
         string memory finalTokenUri = string(abi.encodePacked("data:application/json;base64,", json));
         
-        console.log("\n--------------------------------------------------------");
-        console.log("Final tokenURI", finalTokenUri);
-        console.log("--------------------------------------------------------\n");
+        // console.log("\n--------------------------------------------------------");
+        // console.log("Final tokenURI", finalTokenUri);
+        // console.log("--------------------------------------------------------\n");
         
         _safeMint(msg.sender, newRecordId);
         _setTokenURI(newRecordId, finalTokenUri);
         domains[name] = msg.sender;
+        names[newRecordId] = name;
 
         _tokenIds.increment();
     }
@@ -88,11 +98,41 @@ contract Domains is ERC721URIStorage {
 
     function setRecord(string calldata name, string calldata record) public {
         // Check that the owner is the transaction sender
-        require(domains[name] == msg.sender);
+        require(domains[name] == msg.sender, 'You are not the owner of this domain.');
         records[name] = record;
     }
 
     function getRecord(string calldata name) public view returns (string memory) {
         return records[name];
+    }
+
+    function getAllNames() public view returns (string[] memory){
+        console.log("Getting all domain names on contract");
+        string[] memory allNames = new string[](_tokenIds.current());
+        for (uint i = 0; i < _tokenIds.current(); i++) {
+            allNames[i] = names[i];
+            console.log("Name for toekn %d is %s", i, allNames[i]);
+        }
+        return allNames;
+    }
+
+    function valid(string calldata name) public pure returns(bool) {
+        return StringUtils.strlen(name) >= 3 && StringUtils.strlen(name) <= 10;
+    }
+
+    modifier onlyOwner {
+        require(isOwner());
+        _;
+    }
+
+    function isOwner() public view returns (bool) {
+        return msg.sender == owner;
+    }
+
+    function withdraw() public onlyOwner {
+        uint amount = address(this).balance;
+
+        (bool success, ) = msg.sender.call{value: amount}('');
+        require(success, 'Failed to widthdraw Matic');
     }
 }
